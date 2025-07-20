@@ -9,15 +9,18 @@ generator client {
 
 // Add NextAuth models here (User, Account, Session, VerificationToken)
 model User {
-  id            String   @id @default(cuid())
-  name          String?
-  email         String?  @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                   String                 @id @default(cuid())
+  name                 String?
+  email                String?                @unique
+  emailVerified        DateTime?
+  image                String?
+  accounts             Account[]
+  sessions             Session[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  history              GenerationHistory[]
+  usageStat            UsageStat[]
+  apiRequestCounterLog ApiRequestCounterLog[]
 }
 
 model Account {
@@ -26,14 +29,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?  @db.Text
-  access_token      String?  @db.Text
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?  @db.Text
+  id_token          String? @db.Text
   session_state     String?
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -52,4 +55,30 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model GenerationHistory {
+  id        String   @id @default(cuid())
+  prompt    String
+  result    String
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model UsageStat {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  creditsUsed Int
+  date        DateTime @default(now())
+
+  @@unique([userId, date], name: "userId_date")
+}
+
+model ApiRequestCounterLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
 }

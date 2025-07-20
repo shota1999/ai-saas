@@ -1,7 +1,7 @@
 "use client";
 
-import { Navbar } from "@/shared/components/layout/Navbar";
-import Sidebar from "@/shared/components/layout/Sidebar";
+import { Navbar } from "@/components/layout/Navbar";
+import Sidebar from "@/components/layout/Sidebar";
 import "@/styles/globals.css";
 import { SessionProvider } from "next-auth/react";
 

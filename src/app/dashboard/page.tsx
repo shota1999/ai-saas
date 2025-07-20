@@ -2,6 +2,9 @@
 
 import { useSession } from "next-auth/react";
 import Image from "next/image";
+import TodayCredits from "./components/widgets/TodayCredits";
+import UsageStats from "./components/widgets/UsageStats";
+import ApiRequestsCounter from "./components/widgets/ApiRequestsCounter";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -37,17 +40,21 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-blue-50 p-4 rounded shadow">
           <p className="text-sm text-gray-500">API Requests</p>
-          <p className="text-xl font-bold">1,234</p>
+          <ApiRequestsCounter />
         </div>
         <div className="bg-green-50 p-4 rounded shadow">
-          <p className="text-sm text-gray-500">Credits Used</p>
-          <p className="text-xl font-bold">42</p>
+          <p className="text-sm text-gray-500">Credits Used Today</p>
+          <TodayCredits />
         </div>
         <div className="bg-yellow-50 p-4 rounded shadow">
           <p className="text-sm text-gray-500">Active Plan</p>
           <p className="text-xl font-bold">Free Tier</p>
         </div>
       </div>
+        <div className="bg-blue-50 p-4 rounded shadow">
+          <p className="text-sm text-gray-500">Daily Credits Used</p>
+        <UsageStats />
+        </div>
     </div>
   );
 }
