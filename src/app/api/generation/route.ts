@@ -1,7 +1,6 @@
 import { createGenerationWithStats } from "@/features/generations/services/generationSevice";
 import { NextResponse } from "next/server";
 
-
 export async function POST(req: Request) {
   try {
     const { userId, prompt, result } = await req.json();
@@ -13,8 +12,13 @@ export async function POST(req: Request) {
     const generation = await createGenerationWithStats(userId, prompt, result);
 
     return NextResponse.json(generation, { status: 201 });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error saving generation:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+
+    // Narrow error to extract message safely
+    const message =
+      error instanceof Error ? error.message : "Internal Server Error";
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

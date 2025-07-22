@@ -1,26 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-// Add NextAuth models here (User, Account, Session, VerificationToken)
 model User {
   id                   String                 @id @default(cuid())
   name                 String?
   email                String?                @unique
   emailVerified        DateTime?
   image                String?
-  accounts             Account[]
-  sessions             Session[]
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
-  history              GenerationHistory[]
-  usageStat            UsageStat[]
+  planId               String?  
+  plan                 Plan?                  @relation(fields: [planId], references: [id])
+  accounts             Account[]
   apiRequestCounterLog ApiRequestCounterLog[]
+  history              GenerationHistory[]
+  sessions             Session[]
+  usageStat            UsageStat[]
 }
 
 model Account {
@@ -29,12 +30,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -69,9 +70,9 @@ model GenerationHistory {
 model UsageStat {
   id          String   @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
   creditsUsed Int
   date        DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, date], name: "userId_date")
 }
@@ -79,6 +80,14 @@ model UsageStat {
 model ApiRequestCounterLog {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Plan {
+  id      String   @id @default(cuid())
+  name    String
+  credits Int
+  price   Float
+  users   User[]
 }
