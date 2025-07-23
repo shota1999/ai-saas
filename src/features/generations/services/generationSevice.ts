@@ -7,10 +7,10 @@ export async function createGenerationWithStats(
   prompt: string,
   result: string
 ) {
-  // ✅ Get User Plan
+
 const user = await prisma.user.findUnique({
   where: { id: userId },
-  select: { plan: true }, // returns plan object or null
+  select: { plan: true }, 
 });
 
 if (!user) {
@@ -35,7 +35,6 @@ const usage = await prisma.usageStat.findUnique({
 
 const usedCredits = usage?.creditsUsed || 0;
 
-// Access the plan name property for indexing
 const dailyLimit = PLAN_LIMITS[user.plan.name];
 
 if (usedCredits >= dailyLimit) {

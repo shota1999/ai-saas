@@ -2,21 +2,23 @@
 
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import TodayCredits from "./components/widgets/TodayCredits";
 import UsageStats from "./components/widgets/UsageStats";
 import ApiRequestsCounter from "./components/widgets/ApiRequestsCounter";
+import { useUserUsage } from "@/features/generations/hooks/useUserUsage";
+import PlanSelector from "./components/widgets/PlanSelector";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
+  const { usage, loading } = useUserUsage();
 
-  if (status === "loading") return <p>Loading dashboard...</p>;
-  console.log(session,"gela")
+  if (status === "loading" || loading) return <p>Loading dashboard...</p>;
+  if (!session?.user) return <p className="text-red-500">No session found. Please log in.</p>;
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
 
-      {session?.user ? (
+      {session.user && (
         <div className="bg-white shadow p-4 rounded mb-6 flex items-center space-x-4">
           {session.user.image && (
             <Image
@@ -32,29 +34,32 @@ export default function DashboardPage() {
             <p className="text-gray-600 text-sm">{session.user.email}</p>
           </div>
         </div>
-      ) : (
-        <p className="text-red-500">No session found. Please log in.</p>
       )}
 
-      {/* ✅ Mock Usage Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* ✅ Real Usage Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-blue-50 p-4 rounded shadow">
           <p className="text-sm text-gray-500">API Requests</p>
           <ApiRequestsCounter />
         </div>
-        <div className="bg-green-50 p-4 rounded shadow">
-          <p className="text-sm text-gray-500">Credits Used Today</p>
-          <TodayCredits />
-        </div>
         <div className="bg-yellow-50 p-4 rounded shadow">
           <p className="text-sm text-gray-500">Active Plan</p>
-          <p className="text-xl font-bold">Free Tier</p>
+          <p className="text-xl font-bold">{usage?.plan ?? "Unknown"}</p>
         </div>
       </div>
-        <div className="bg-blue-50 p-4 rounded shadow">
-          <p className="text-sm text-gray-500">Daily Credits Used</p>
+
+      <div className="bg-blue-50 p-4 rounded shadow mt-4">
+        <p className="text-sm text-gray-500">Daily Credits Used</p>
         <UsageStats />
-        </div>
+        {usage && (
+          <div className="mt-2 text-gray-700 text-sm">
+            {usage.usedCredits} / {usage.dailyLimit} used  
+            <br />
+            Remaining: <span className="font-bold">{usage.remaining}</span>
+          </div>
+        )}
+      </div>
+      <PlanSelector />
     </div>
   );
 }

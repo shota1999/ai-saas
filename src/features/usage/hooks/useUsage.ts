@@ -11,19 +11,17 @@ export interface UsageStat {
 
 
 
-
-
 export function useUsage(userId?: string) {
-  const [data, setData] = useState<UsageStat[]>([]); // ✅ explicitly typed
+  const [data, setData] = useState<UsageStat[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
-    setLoading(true);
 
+    setLoading(true);
     fetch(`/api/usage?userId=${userId}`)
       .then((res) => res.json())
-      .then((stats: UsageStat[]) => setData(stats)) // ✅ typed response
+      .then((data: { usageStats: UsageStat[] }) => setData(data.usageStats || []))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [userId]);

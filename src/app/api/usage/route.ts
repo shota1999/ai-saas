@@ -1,24 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/shared/lib/prisma";
-
-export async function POST(req: Request) {
-  try {
-    const { userId, creditsUsed } = await req.json();
-
-    if (!userId || creditsUsed == null) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-    }
-
-    const usage = await prisma.usageStat.create({
-      data: { userId, creditsUsed },
-    });
-
-    return NextResponse.json(usage);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
-  }
-}
+import { PLAN_LIMITS } from "@/features/generations/constants/planLimits";
 
 export async function GET(req: Request) {
   try {
@@ -26,20 +8,50 @@ export async function GET(req: Request) {
     const userId = searchParams.get("userId");
 
     if (!userId) {
-      return NextResponse.json(
-        { message: "Missing userId query parameter" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
 
-    const usageStats = await prisma.usageStat.findMany({
-      where: { userId },
-      orderBy: { date: "desc" }, // newest first
+    // Get user plan
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        plan: {
+          select: {
+            id: true,
+          },
+        },
+      },
     });
 
-    return NextResponse.json(usageStats);
+    if (!user || !user.plan) {
+      return NextResponse.json({ error: "User or plan not found" }, { status: 404 });
+    }
+
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    // Get usage for today
+    const usage = await prisma.usageStat.findUnique({
+      where: {
+        userId_date: {
+          userId,
+          date: today,
+        },
+      },
+    });
+
+    const usedCredits = usage?.creditsUsed || 0;
+    const dailyLimit = PLAN_LIMITS[user.plan.id];
+    const remaining = dailyLimit - usedCredits;
+
+    return NextResponse.json({
+      usedCredits,
+      dailyLimit,
+      remaining,
+      plan: user.plan.id,
+    });
   } catch (error) {
-    console.error("Error fetching usage stats:", error);
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    console.error("Error fetching usage:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
