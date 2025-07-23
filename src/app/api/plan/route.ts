@@ -30,3 +30,39 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+
+
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
+
+    if (!userId) {
+      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            credits: true,
+            price: true,
+          },
+        },
+      },
+    });
+
+    if (!user || !user.plan) {
+      return NextResponse.json({ error: "User or plan not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ plan: user.plan });
+  } catch (error) {
+    console.error("Error fetching plan:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}

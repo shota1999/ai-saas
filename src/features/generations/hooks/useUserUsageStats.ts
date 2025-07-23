@@ -8,7 +8,7 @@ type UsageData = {
   plan: string;
 };
 
-export function useUserUsage() {
+export function useUserUsageStats() {
   const { data: session } = useSession();
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(false);

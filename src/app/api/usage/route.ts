@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/shared/lib/prisma";
-import { PLAN_LIMITS } from "@/features/generations/constants/planLimits";
 
 export async function GET(req: Request) {
   try {
@@ -18,6 +17,7 @@ export async function GET(req: Request) {
         plan: {
           select: {
             id: true,
+            credits:true
           },
         },
       },
@@ -39,9 +39,8 @@ export async function GET(req: Request) {
         },
       },
     });
-
     const usedCredits = usage?.creditsUsed || 0;
-    const dailyLimit = PLAN_LIMITS[user.plan.id];
+    const dailyLimit = user.plan.credits; 
     const remaining = dailyLimit - usedCredits;
 
     return NextResponse.json({
@@ -55,3 +54,5 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+

@@ -4,12 +4,13 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import UsageStats from "./components/widgets/UsageStats";
 import ApiRequestsCounter from "./components/widgets/ApiRequestsCounter";
-import { useUserUsage } from "@/features/generations/hooks/useUserUsage";
+import { useUserUsageStats } from "@/features/generations/hooks/useUserUsageStats";
 import PlanSelector from "./components/widgets/PlanSelector";
+import ActivePlan from "./components/widgets/ActivePlan";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
-  const { usage, loading } = useUserUsage();
+  const { usage, loading } = useUserUsageStats();
 
   if (status === "loading" || loading) return <p>Loading dashboard...</p>;
   if (!session?.user) return <p className="text-red-500">No session found. Please log in.</p>;
@@ -42,9 +43,9 @@ export default function DashboardPage() {
           <p className="text-sm text-gray-500">API Requests</p>
           <ApiRequestsCounter />
         </div>
-        <div className="bg-yellow-50 p-4 rounded shadow">
-          <p className="text-sm text-gray-500">Active Plan</p>
-          <p className="text-xl font-bold">{usage?.plan ?? "Unknown"}</p>
+        <div>
+         
+            <ActivePlan />
         </div>
       </div>
 
@@ -59,6 +60,7 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+   
       <PlanSelector />
     </div>
   );
