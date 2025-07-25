@@ -10,16 +10,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 
   return (
-    <SessionProvider>
-      <html lang="en">
+    <html lang="en">
         <body className="flex min-h-screen">
+        <SessionProvider>
           <Sidebar />
           <div className="flex-1">
             <Navbar />
             <main className="p-4">{children}</main>
           </div>
+    </SessionProvider>
         </body>
       </html>
-    </SessionProvider>
   );
 }
