@@ -1,4 +1,4 @@
-// app/api/stripe/checkout/route.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -20,13 +20,13 @@ export async function POST(req: NextRequest) {
         },
       ],
       customer_email: customerEmail,
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?success=true`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/pricing?canceled=true`,
     });
 
     return NextResponse.json({ url: session.url });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
