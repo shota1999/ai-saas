@@ -1,19 +1,29 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { createCheckoutSession } from '@/lib/stripe/checkout';
-import { PLANS } from '@/lib/stripe/plans'
+import { PLANS } from '@/lib/stripe/plans';
 
 export default function BillingPage() {
+  const { data: session, status } = useSession();
   const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null);
 
-  // Replace this with the actual user email in your app
-  const customerEmail = 'shota860@gmail.com';
+  if (status === 'loading') return <div>Loading...</div>;
+  if (!session?.user) return <div>Please sign in to view plans.</div>;
 
-  const handleSubscribe = async (priceId: string) => {
+  const customerEmail = session.user.email;
+  const userId = session.user.id;
+
+  const handleSubscribe = async (priceId: string, planSlug: string) => {
+    if (!customerEmail || !userId) {
+      alert('User info missing. Please log in again.');
+      return;
+    }
+
     try {
       setLoadingPriceId(priceId);
-      const url = await createCheckoutSession(priceId, customerEmail);
+      const url = await createCheckoutSession(priceId, customerEmail, userId, planSlug);
       window.location.href = url;
     } catch (err) {
       alert('Error redirecting to Stripe Checkout');
@@ -25,7 +35,7 @@ export default function BillingPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Billing & Plans</h1>a
+      <h1 className="text-2xl font-bold mb-6">Billing & Plans</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {PLANS.map((plan) => (
           <div
@@ -42,7 +52,7 @@ export default function BillingPage() {
             {plan.priceId ? (
               <button
                 className="bg-blue-600 text-white px-4 py-2 rounded w-full hover:bg-blue-700 disabled:opacity-50"
-                onClick={() => handleSubscribe(plan.priceId)}
+                onClick={() => handleSubscribe(plan.priceId, plan.slug)}
                 disabled={loadingPriceId === plan.priceId}
               >
                 {loadingPriceId === plan.priceId ? 'Redirecting...' : 'Choose Plan'}

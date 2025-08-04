@@ -1,15 +1,20 @@
-export const createCheckoutSession = async (priceId: string, customerEmail: string) => {
+export async function createCheckoutSession(
+  priceId: string,
+  customerEmail: string,
+  userId: string,
+  planSlug: string
+): Promise<string> {
   const res = await fetch('/api/stripe/checkout', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ priceId, customerEmail }),
+    body: JSON.stringify({ priceId, customerEmail, userId, planSlug }),
+    headers: {
+      'Content-Type': 'application/json',
+    },
   });
 
-  if (!res.ok) {
-    const { error } = await res.json();
-    throw new Error(error || 'Checkout session failed');
+  const data = await res.json();
+  if (!data.url) {
+    throw new Error(data.error || 'Failed to create checkout session');
   }
-
-  const { url } = await res.json();
-  return url;
-};
+  return data.url;
+}

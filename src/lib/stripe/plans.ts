@@ -1,27 +1,46 @@
-export interface Plan {
-  name: string;
-  priceText: string;
-  priceId: string;
-  features: string[];
-}
+// lib/stripe/plans.ts
 
-export const PLANS: Plan[] = [
+export type Plan = {
+  slug: 'free' | 'pro' | 'enterprise'; // Type-safe identifiers
+  name: string;
+  priceId: string; // Empty string for Free plan (non-billable)
+  priceText: string;
+  features: string[];
+};
+
+export const PLANS: Omit<Plan, 'id'>[] = [
   {
-    name: "Free",
-    priceText: "$0",
-    priceId: "", 
-    features: ["Basic generation", "Limited credits"],
+    slug: 'free',
+    name: 'Free',
+    priceId: '', // No Stripe price ID needed for Free plan
+    priceText: '$0/month',
+    features: [
+      'Basic features',
+      'Community support',
+      'Limited usage',
+    ],
   },
   {
-    name: "Pro",
-    priceText: "$19/mo",
-    priceId: "price_1RqGdKQoAp4c8NIpEYcdun8Q",
-    features: ["Unlimited generation", "Priority support"],
+    slug: 'pro',
+    name: 'Pro',
+    priceId: 'price_1RqGdKQoAp4c8NIpEYcdun8Q', // Replace with your real Stripe price ID
+    priceText: '$9.99/month',
+    features: [
+      'All Free features',
+      'Priority email support',
+      'Extended usage limits',
+    ],
   },
   {
-    name: "Enterprise",
-    priceText: "$99/mo",
-    priceId: "price_1RqGeGQoAp4c8NIpoxKuOX9l", 
-    features: ["Custom AI models", "Dedicated support"],
+    slug: 'enterprise',
+    name: 'Enterprise',
+    priceId: 'price_1RqGeGQoAp4c8NIpoxKuOX9l', // Replace with your real Stripe price ID
+    priceText: '$49.99/month',
+    features: [
+      'Everything in Pro',
+      'Dedicated account manager',
+      'Custom integrations',
+      'Unlimited usage',
+    ],
   },
 ];

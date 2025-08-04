@@ -1,5 +1,6 @@
-import Stripe from "stripe";
-import { prisma } from "@/shared/lib/prisma";
+import { headers } from 'next/headers';
+import Stripe from 'stripe';
+import { prisma } from '@/shared/lib/prisma';
 
 export const config = {
   api: {
@@ -8,76 +9,71 @@ export const config = {
 };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-07-30.basil",
+  apiVersion: '2025-07-30.basil',
 });
 
-// Reads raw stream body as Buffer (App Router compatible)
-async function buffer(readable: ReadableStream<Uint8Array>): Promise<Buffer> {
+async function buffer(readable: ReadableStream<Uint8Array>) {
   const reader = readable.getReader();
   const chunks: Uint8Array[] = [];
-
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
     if (value) chunks.push(value);
   }
-
   return Buffer.concat(chunks);
 }
 
 export async function POST(req: Request) {
-  const sig = req.headers.get("stripe-signature");
-  if (!sig) {
-    return new Response("Missing stripe-signature header", { status: 400 });
+  const headersList = await headers();
+  const sig = headersList.get('stripe-signature');
+
+  if (!sig || !process.env.STRIPE_WEBHOOK_SECRET) {
+    console.error('❌ Missing signature or webhook secret');
+    return new Response('Missing signature or secret', { status: 400 });
   }
 
-  if (!req.body) {
-    return new Response("Request body is null", { status: 400 });
-  }
+  const rawBody = await buffer(req.body as ReadableStream<Uint8Array>);
 
   let event: Stripe.Event;
 
   try {
-    const buf = await buffer(req.body);
-    event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    event = stripe.webhooks.constructEvent(
+      rawBody,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
   } catch (err) {
-    console.error("❌ Webhook signature verification failed.", err);
-    return new Response(`Webhook Error: ${err}`, { status: 400 });
+    console.error('❌ Invalid webhook signature:', err);
+    return new Response('Invalid signature', { status: 400 });
   }
 
   console.log(`✅ Webhook received: ${event.type}`);
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const session = event.data.object as Stripe.Checkout.Session;
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    const userId = session.metadata?.userId;
+    const planSlug = session.metadata?.planSlug; // changed from planId to planSlug
 
-      const userId = session.metadata?.userId;
-      const planId = session.metadata?.planId;
-
-      if (!userId || !planId) {
-        console.error("❌ Missing userId or planId in session metadata.");
-        break;
+    if (!userId || !planSlug) {
+      console.error("❌ Missing userId or planSlug in metadata.");
+    } else {
+      // Lookup plan by slug
+      const plan = await prisma.plan.findUnique({ where: { slug: planSlug } });
+      if (!plan) {
+        console.error(`❌ Plan slug "${planSlug}" does not exist in DB`);
+      } else {
+        try {
+          await prisma.user.update({
+            where: { id: userId },
+            data: { planId: plan.id },
+          });
+          console.log(`✅ Updated user ${userId} to plan "${planSlug}"`);
+        } catch (err) {
+          console.error("❌ Error updating user:", err);
+        }
       }
-
-      try {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { planId },
-        });
-        console.log(`✅ Updated user ${userId} to plan ${planId}`);
-      } catch (error) {
-        console.error("❌ Failed to update user:", error);
-      }
-
-      break;
     }
-
-    default:
-      console.log(`Unhandled event type: ${event.type}`);
   }
 
-  return new Response("Received", {
-    status: 200,
-    headers: { "Content-Type": "text/plain" },
-  });
+  return new Response('ok', { status: 200 });
 }

@@ -1,11 +1,11 @@
 import { prisma } from "@/shared/lib/prisma";
 
 async function main() {
-  // Find the FREE plan
-  const freePlan = await prisma.plan.findFirst({ where: { name: "FREE" } });
+  // Find the Free plan
+  const freePlan = await prisma.plan.findFirst({ where: { name: "Free" } });
 
   if (!freePlan) {
-    console.error("No FREE plan found. Create it in the Plan table first.");
+    console.error("No Free plan found. Create it in the Plan table first.");
     return;
   }
 
@@ -15,7 +15,7 @@ async function main() {
     data: { planId: freePlan.id },
   });
 
-  console.log("✅ All users now have the FREE plan.");
+  console.log("✅ All users now have the Free plan.");
 }
 
 main().finally(() => prisma.$disconnect());

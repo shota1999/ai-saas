@@ -16,6 +16,27 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
 
   callbacks: {
+    async signIn({ user}) {
+      // Check if user already has a plan
+      const existingUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { planId: true }
+      });
+
+      // If user doesn't have a plan, assign the Free plan
+      if (existingUser && !existingUser.planId) {
+        const freePlan = await prisma.plan.findFirst({ where: { name: "Free" } });
+        if (freePlan) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { planId: freePlan.id }
+          });
+          console.log(`✅ Assigned Free plan to new user: ${user.email}`);
+        }
+      }
+
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) token.id = user.id
       return token;

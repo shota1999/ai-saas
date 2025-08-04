@@ -3,21 +3,23 @@ import { prisma } from "@/shared/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const { userId, planId } = await req.json();
+    const { userId, planSlug } = await req.json();
 
-    if (!userId || !planId) {
-      return NextResponse.json({ error: "Missing userId or planId" }, { status: 400 });
+    if (!userId || !planSlug) {
+      return NextResponse.json({ error: "Missing userId or planSlug" }, { status: 400 });
     }
 
-    const plan = await prisma.plan.findUnique({ where: { id: planId } });
+    // Find plan by slug
+    const plan = await prisma.plan.findUnique({ where: { slug: planSlug } });
 
     if (!plan) {
-      return NextResponse.json({ error: "Invalid planId" }, { status: 404 });
+      return NextResponse.json({ error: "Invalid planSlug" }, { status: 404 });
     }
 
+    // Update user with plan's ID
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { planId },
+      data: { planId: plan.id },
       include: { plan: true },
     });
 
@@ -30,7 +32,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
 
 
 export async function GET(req: Request) {
@@ -49,6 +50,7 @@ export async function GET(req: Request) {
           select: {
             id: true,
             name: true,
+            slug: true,   // add slug here for clarity
             credits: true,
             price: true,
           },
